@@ -1,0 +1,79 @@
+<?php
+    $optionList = [];
+    foreach($block->getOptionList() as $option) {
+        $optionList[$option['option_id']] = $option['option_value'];
+    };
+?>
+
+<?php /** @var $block \Magento\Swatches\Block\Product\Renderer\Configurable */ ?>
+<div class="swatch-opt-<?= /* @escapeNotVerified */ $block->getProduct()->getId() ?>">
+</div>
+
+<script>
+    require([
+        'jquery',
+        'jquery/ui',
+        'Magento_Swatches/js/swatch-renderer',
+        'Magento_Swatches/js/catalog-add-to-cart',
+        'Magento_Customer/js/customer-data'/*,
+        'Magento_Checkout/js/action/get-totals'*/
+    ], function ($, ui, swatchRenderer, catalogAddToCart, customerData/*, getTotalsAction*/) {
+        var jsonConfig = <?= /* @escapeNotVerified */ $block->getJsonConfig() ?>;
+        var itemId = <?= $block->getItem()->getId() ?>;
+
+        var $el = $('.swatch-opt-<?= /* @escapeNotVerified */ $block->getProduct()->getId() ?>').SwatchRenderer({
+            classes: {
+                loader: 'ecommpro-swatch-option-loading'
+            },
+            selectorProduct: '.product-item-details',
+            onlySwatches: true,
+            enableControlLabel: true,
+            numberToShow: <?= /* @escapeNotVerified */ $block->getNumberSwatchesPerProduct() ?>,
+            jsonConfig: jsonConfig,
+            jsonSwatchConfig: <?= /* @escapeNotVerified */ $block->getJsonSwatchConfig() ?>,
+            mediaCallback: '<?= /* @escapeNotVerified */ $block->getMediaCallback() ?>'
+        });
+
+        var swatchWidget = $el.data('mage-SwatchRenderer');
+        swatchWidget._EmulateSelectedByAttributeId(<?= json_encode($optionList) ?>, 'click');
+
+        var $inputs = $('<div>');
+        $el.append($inputs);
+
+        $el.find('input.swatch-input').on('change', function() {
+            
+            $inputs.empty();
+
+            $el.find('.swatch-attribute').each(function() {
+                var $att = $(this);
+                var attId = $att.attr('attribute-id');
+                var attValue = $att.attr('option-selected');
+
+                var name = 'cart[' + itemId + '][super_attribute][' + attId + ']';
+                var $input = $('<input>')
+                    .attr('type', 'hidden')
+                    .attr('name', name)
+                    .attr('value', attValue);
+
+                $inputs.append($input);
+            });
+
+
+            /*
+            var sections = ['cart'];
+            customerData.reload(sections, true);
+            // The totals summary block reloading
+            var deferred = $.Deferred();
+            getTotalsAction([], deferred);
+            */
+
+        });
+
+        $('.swatch-attribute-options', $el).removeAttr('aria-required');
+        $('input.swatch-input', $el)
+            .removeAttr('aria-required')
+            .removeAttr('data-validate')
+        ;
+
+    });
+</script>
